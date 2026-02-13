@@ -38,6 +38,7 @@ from airflow.models.taskmap import TaskMap
 from airflow.providers.standard.operators.bash import BashOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import task as task_decorator
+from airflow.serialization.helpers import serialize_template_field
 from airflow.utils.sqlalchemy import get_dialect_name
 from airflow.utils.state import TaskInstanceState
 
@@ -124,13 +125,12 @@ class TestRenderedTaskInstanceFields:
             pytest.param(datetime(2018, 12, 6, 10, 55), "2018-12-06 10:55:00+00:00", id="datetime"),
             pytest.param(
                 "a" * 5000,
-                f"Truncated. You can change this behaviour in [core]max_templated_field_length. {('a' * 5000)[: max_length - 79]!r}... ",
+                serialize_template_field("a" * 5000, "bash_command"),
                 id="large_string",
             ),
             pytest.param(
                 LargeStrObject(),
-                f"Truncated. You can change this behaviour in "
-                f"[core]max_templated_field_length. {str(LargeStrObject())[: max_length - 79]!r}... ",
+                serialize_template_field(LargeStrObject(), "bash_command"),
                 id="large_object",
             ),
         ],
