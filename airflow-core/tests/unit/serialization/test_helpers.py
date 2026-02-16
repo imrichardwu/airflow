@@ -16,7 +16,7 @@
 # under the License.
 from __future__ import annotations
 
-from airflow.serialization.helpers import _truncate_rendered_value
+from airflow.utils.helpers import _truncate_rendered_value
 
 
 def test_serialize_template_field_with_very_small_max_length(monkeypatch):

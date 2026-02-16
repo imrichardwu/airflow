@@ -25,69 +25,11 @@ from airflow._shared.module_loading import qualname
 from airflow._shared.secrets_masker import redact
 from airflow.configuration import conf
 from airflow.settings import json
+from airflow.utils.helpers import _truncate_rendered_value
 
 if TYPE_CHECKING:
     from airflow.partition_mapper.base import PartitionMapper
     from airflow.timetables.base import Timetable as CoreTimetable
-
-
-def _truncate_rendered_value(rendered: str, max_length: int) -> str:
-    MIN_CONTENT_LENGTH = 7
-
-    if max_length <= 0:
-        return ""
-
-    prefix = "Truncated. You can change this behaviour in [core]max_templated_field_length. "
-    suffix = "..."
-    value = rendered
-
-    # Always prioritize showing the truncation message first
-    trunc_only = f"{prefix}{suffix}"
-
-    # If max_length is too small to even show the message, return it anyway
-    # (message takes priority over the constraint)
-    if max_length < len(trunc_only):
-        return trunc_only
-
-    # Check if value already has outer quotes - if so, preserve them and don't add extra quotes
-    has_outer_quotes = (value.startswith('"') and value.endswith('"')) or (
-        value.startswith("'") and value.endswith("'")
-    )
-
-    if has_outer_quotes:
-        # Preserve existing quote character and strip outer quotes to get inner content
-        quote_char = value[0]
-        content = value[1:-1]
-    else:
-        # Choose quote character: use double quotes if value contains single quotes,
-        # otherwise use single quotes
-        if "'" in value and '"' not in value:
-            quote_char = '"'
-        else:
-            quote_char = "'"
-        content = value
-
-    # Calculate overhead: prefix + opening quote + closing quote + suffix
-    overhead = len(prefix) + 2 + len(suffix)
-    available = max_length - overhead
-
-    # Only show content if there's meaningful space for it
-    if available < MIN_CONTENT_LENGTH:
-        return trunc_only
-
-    # Get content and trim trailing spaces
-    content = content[:available].rstrip()
-
-    # Build the result and ensure it doesn't exceed max_length
-    result = f"{prefix}{quote_char}{content}{quote_char}{suffix}"
-
-    # Trim content to ensure result < max_length, with a small buffer when possible
-    target_length = max_length - 1
-    while len(result) > target_length and len(content) > 0:
-        content = content[:-1].rstrip()
-        result = f"{prefix}{quote_char}{content}{quote_char}{suffix}"
-
-    return result
 
 
 def serialize_template_field(template_field: Any, name: str) -> str | dict | list | int | float:
