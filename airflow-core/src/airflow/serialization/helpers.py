@@ -32,20 +32,21 @@ if TYPE_CHECKING:
 
 
 def _truncate_rendered_value(rendered: str, max_length: int) -> str:
+    MIN_CONTENT_LENGTH = 7
+
     if max_length <= 0:
         return ""
 
     prefix = "Truncated. You can change this behaviour in [core]max_templated_field_length. "
     suffix = "..."
-    value = str(rendered)
+    value = rendered
 
     # Always prioritize showing the truncation message first
     trunc_only = f"{prefix}{suffix}"
-    trunc_only_len = len(trunc_only)
 
     # If max_length is too small to even show the message, return it anyway
     # (message takes priority over the constraint)
-    if max_length < trunc_only_len:
+    if max_length < len(trunc_only):
         return trunc_only
 
     # Check if value already has outer quotes - if so, preserve them and don't add extra quotes
@@ -54,69 +55,39 @@ def _truncate_rendered_value(rendered: str, max_length: int) -> str:
     )
 
     if has_outer_quotes:
-        # Value already has quotes - preserve the opening quote, truncate inner content
+        # Preserve existing quote character and strip outer quotes to get inner content
         quote_char = value[0]
-        inner_value = value[1:-1]  # Strip outer quotes
-        # Calculate overhead: prefix + opening quote + suffix (no closing quote)
-        overhead = len(prefix) + 1 + len(suffix)
-        available = max_length - overhead
-
-        MIN_CONTENT_LENGTH = 7
-        if available < MIN_CONTENT_LENGTH:
-            return trunc_only
-
-        # Get content and trim trailing spaces
-        content = inner_value[:available].rstrip()
-
-        # Build result with opening quote, content, and suffix (no closing quote)
-        result = f"{prefix}{quote_char}{content}{suffix}"
-
-        # Ensure result < max_length, with a buffer when possible
-        # For values with outer quotes, use a larger buffer (3) since we don't add closing quotes
-        target_length = max_length - 3
-        while len(result) > target_length and len(content) > 0:
-            content = content[:-1].rstrip()
-            result = f"{prefix}{quote_char}{content}{suffix}"
-
-        return result
-    # Value doesn't have outer quotes - add quotes around content
-    # Choose quote character: use double quotes if value contains single quotes,
-    # otherwise use single quotes
-    if "'" in value and '"' not in value:
-        quote_char = '"'
+        content = value[1:-1]
     else:
-        quote_char = "'"
+        # Choose quote character: use double quotes if value contains single quotes,
+        # otherwise use single quotes
+        if "'" in value and '"' not in value:
+            quote_char = '"'
+        else:
+            quote_char = "'"
+        content = value
 
-    # Calculate overhead: prefix + quotes around content + suffix
-    # Format: prefix + quote_char + content + quote_char + suffix
-    overhead = len(prefix) + 2 + len(suffix)  # 2 for the quotes around content
+    # Calculate overhead: prefix + opening quote + closing quote + suffix
+    overhead = len(prefix) + 2 + len(suffix)
     available = max_length - overhead
 
     # Only show content if there's meaningful space for it
-    # Require at least enough space to show a few characters of content meaningfully
-    # This prevents showing just 1-2 characters which isn't very useful
-    MIN_CONTENT_LENGTH = 7
     if available < MIN_CONTENT_LENGTH:
         return trunc_only
 
     # Get content and trim trailing spaces
-    content = value[:available].rstrip()
+    content = content[:available].rstrip()
 
     # Build the result and ensure it doesn't exceed max_length
     result = f"{prefix}{quote_char}{content}{quote_char}{suffix}"
 
     # Trim content to ensure result < max_length, with a small buffer when possible
-    # Trim until result is at least 1 char under max_length to leave a buffer
     target_length = max_length - 1
     while len(result) > target_length and len(content) > 0:
         content = content[:-1].rstrip()
         result = f"{prefix}{quote_char}{content}{quote_char}{suffix}"
 
     return result
-
-
-def _safe_truncate_rendered_value(rendered: Any, max_length: int) -> str:
-    return _truncate_rendered_value(str(rendered), max_length)
 
 
 def serialize_template_field(template_field: Any, name: str) -> str | dict | list | int | float:
@@ -171,7 +142,7 @@ def serialize_template_field(template_field: Any, name: str) -> str | dict | lis
                 serialized = str(template_field)
         if len(serialized) > max_length:
             rendered = redact(serialized, name)
-            return _safe_truncate_rendered_value(rendered, max_length)
+            return _truncate_rendered_value(str(rendered), max_length)
         return serialized
     if not template_field and not isinstance(template_field, tuple):
         # Avoid unnecessary serialization steps for empty fields unless they are tuples
@@ -185,7 +156,7 @@ def serialize_template_field(template_field: Any, name: str) -> str | dict | lis
     serialized = str(template_field)
     if len(serialized) > max_length:
         rendered = redact(serialized, name)
-        return _safe_truncate_rendered_value(rendered, max_length)
+        return _truncate_rendered_value(str(rendered), max_length)
     return template_field
 
 
