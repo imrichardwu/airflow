@@ -124,7 +124,7 @@ def test_truncate_rendered_value_exact_expected_output():
         (100, "True", prefix + "'True'" + suffix),
         (100, "{'key': 'value'}", prefix + "\"{'key': 'value'}\"" + suffix),
         (100, "test's", prefix + '"test\'s"' + suffix),
-        (90, '"quoted"', prefix + '"quote' + suffix),
+        (90, '"quoted"', prefix + '"quoted"' + suffix),
     ]
 
     for max_length, rendered, expected in test_cases:
