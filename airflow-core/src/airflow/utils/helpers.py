@@ -82,7 +82,7 @@ def _truncate_rendered_value(rendered: str, max_length: int) -> str:
 
     # Compute formatting overhead and calculate available space
     overhead = len(prefix) + 2 + len(suffix)  # prefix + opening quote + closing quote + suffix
-    available = max_length - overhead
+    available = max_length - overhead - 1
 
     # If available space < MIN_CONTENT_LENGTH, return truncation message only
     if available < MIN_CONTENT_LENGTH:
