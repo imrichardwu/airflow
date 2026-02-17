@@ -53,57 +53,49 @@ S = TypeVar("S")
 def _truncate_rendered_value(rendered: str, max_length: int) -> str:
     MIN_CONTENT_LENGTH = 7
 
+    # If max_length <= 0, return ""
     if max_length <= 0:
         return ""
 
+    # Build truncation message once, return if max_length is too small
     prefix = "Truncated. You can change this behaviour in [core]max_templated_field_length. "
     suffix = "..."
-    value = rendered
-
-    # Always prioritize showing the truncation message first
     trunc_only = f"{prefix}{suffix}"
 
-    # If max_length is too small to even show the message, return it anyway
-    # (message takes priority over the constraint)
     if max_length < len(trunc_only):
         return trunc_only
 
-    # Check if value already has outer quotes - if so, preserve them and don't add extra quotes
+    # Determine quoting strategy, compute overhead, calculate available space
+    value = rendered
+
+    # Determine quoting strategy: preserve existing quotes or choose appropriate ones
     has_outer_quotes = (value.startswith('"') and value.endswith('"')) or (
         value.startswith("'") and value.endswith("'")
     )
 
     if has_outer_quotes:
-        # Preserve existing quote character and strip outer quotes to get inner content
         quote_char = value[0]
         content = value[1:-1]
     else:
-        # Choose quote character: use double quotes if value contains single quotes,
-        # otherwise use single quotes
-        if "'" in value and '"' not in value:
-            quote_char = '"'
-        else:
-            quote_char = "'"
+        quote_char = '"' if "'" in value and '"' not in value else "'"
         content = value
 
-    # Calculate overhead: prefix + opening quote + closing quote + suffix
-    overhead = len(prefix) + 2 + len(suffix)
+    # Compute formatting overhead and calculate available space
+    overhead = len(prefix) + 2 + len(suffix)  # prefix + opening quote + closing quote + suffix
     available = max_length - overhead
 
-    # Only show content if there's meaningful space for it
+    # If available space < MIN_CONTENT_LENGTH, return truncation message only
     if available < MIN_CONTENT_LENGTH:
         return trunc_only
 
-    # Get content and trim trailing spaces
+    # Slice content to fit, construct final string, ensure it doesn't exceed max_length
     content = content[:available].rstrip()
-
-    # Build the result and ensure it doesn't exceed max_length
     result = f"{prefix}{quote_char}{content}{quote_char}{suffix}"
 
-    # Trim content to ensure result < max_length, with a small buffer when possible
-    target_length = max_length - 1
-    while len(result) > target_length and len(content) > 0:
-        content = content[:-1].rstrip()
+    # Ensure result doesn't exceed max_length (trim if necessary)
+    if len(result) > max_length:
+        excess = len(result) - max_length
+        content = content[: len(content) - excess].rstrip()
         result = f"{prefix}{quote_char}{content}{quote_char}{suffix}"
 
     return result
