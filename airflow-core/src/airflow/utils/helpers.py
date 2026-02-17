@@ -82,7 +82,7 @@ def _truncate_rendered_value(rendered: str, max_length: int) -> str:
 
     # Compute formatting overhead and calculate available space
     overhead = len(prefix) + 2 + len(suffix)  # prefix + opening quote + closing quote + suffix
-    available = max_length - overhead - 1
+    available = max_length - overhead
 
     # If available space < MIN_CONTENT_LENGTH, return truncation message only
     if available < MIN_CONTENT_LENGTH:
@@ -92,9 +92,9 @@ def _truncate_rendered_value(rendered: str, max_length: int) -> str:
     content = content[:available].rstrip()
     result = f"{prefix}{quote_char}{content}{quote_char}{suffix}"
 
-    # Ensure result doesn't exceed max_length (trim if necessary)
-    if len(result) > max_length:
-        excess = len(result) - max_length
+    # Ensure result is strictly less than max_length (trim if necessary)
+    if len(result) >= max_length:
+        excess = len(result) - max_length + 1
         content = content[: len(content) - excess].rstrip()
         result = f"{prefix}{quote_char}{content}{quote_char}{suffix}"
 
