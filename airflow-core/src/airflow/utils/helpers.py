@@ -53,7 +53,6 @@ S = TypeVar("S")
 def _truncate_rendered_value(rendered: str, max_length: int) -> str:
     MIN_CONTENT_LENGTH = 7
 
-    # If max_length <= 0, return ""
     if max_length <= 0:
         return ""
 
@@ -84,7 +83,6 @@ def _truncate_rendered_value(rendered: str, max_length: int) -> str:
     overhead = len(prefix) + 2 + len(suffix)  # prefix + opening quote + closing quote + suffix
     available = max_length - overhead
 
-    # If available space < MIN_CONTENT_LENGTH, return truncation message only
     if available < MIN_CONTENT_LENGTH:
         return trunc_only
 
