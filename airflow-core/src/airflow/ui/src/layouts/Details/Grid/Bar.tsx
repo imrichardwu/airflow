@@ -32,6 +32,8 @@ import { GridButton } from "./GridButton";
 const BAR_HEIGHT = 100;
 const ICON_GAP_PX = 4;
 const ICON_HEIGHT_PX = 16;
+const BAR_PADDING_BOTTOM_PX = 2;
+const BAR_MIN_HEIGHT_PX = 14;
 
 type Props = {
   readonly max: number;
@@ -64,8 +66,9 @@ export const Bar = ({ max, onClick, run }: Props) => {
     void navigate({ pathname: `/dags/${dagId}/runs/${run.run_id}/deadlines`, search });
   };
 
-  // When both icons are present, stack the deadline icon above the failed icon
-  const failedIconBottom = barHeightPx + ICON_GAP_PX;
+  // Account for minHeight and padding-bottom so icons always appear above the rendered bar
+  const effectiveBarHeightPx = Math.max(barHeightPx, BAR_MIN_HEIGHT_PX) + BAR_PADDING_BOTTOM_PX;
+  const failedIconBottom = effectiveBarHeightPx + ICON_GAP_PX;
   const deadlineIconBottom = isFailed ? failedIconBottom + ICON_HEIGHT_PX : failedIconBottom;
 
   return (
