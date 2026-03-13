@@ -1951,26 +1951,6 @@ export type DeadlineAlertResponse = {
 };
 
 /**
- * Deadline Collection serializer for responses.
- */
-export type DeadlineCollectionResponse = {
-    deadlines: Array<DeadlineResponse>;
-    total_entries: number;
-};
-
-/**
- * Deadline serializer for responses.
- */
-export type DeadlineResponse = {
-    id: string;
-    deadline_time: string;
-    missed: boolean;
-    created_at: string;
-    alert_name?: string | null;
-    alert_description?: string | null;
-};
-
-/**
  * Deadline Collection serializer for responses that includes DAG and DAG run identifiers.
  */
 export type DeadlineWithDagRunCollectionResponse = {
@@ -3633,7 +3613,8 @@ export type HistoricalMetricsResponse = HistoricalMetricDataResponse;
 export type DagStatsResponse2 = DashboardDagStatsResponse;
 
 export type GetDeadlinesData = {
-    dagId?: string | null;
+    dagId: string;
+    dagRunId: string;
     deadlineTimeGte?: string | null;
     deadlineTimeLte?: string | null;
     limit?: number;
@@ -3646,19 +3627,6 @@ export type GetDeadlinesData = {
 };
 
 export type GetDeadlinesResponse = DeadlineWithDagRunCollectionResponse;
-
-export type GetDagRunDeadlinesData = {
-    dagId: string;
-    dagRunId: string;
-    limit?: number;
-    offset?: number;
-    /**
-     * Attributes to order by, multi criteria sort is supported. Prefix with `-` for descending order. Supported attributes: `id, deadline_time, created_at, alert_name`
-     */
-    orderBy?: Array<(string)>;
-};
-
-export type GetDagRunDeadlinesResponse = DeadlineCollectionResponse;
 
 export type GetDagDeadlineAlertsData = {
     dagId: string;
@@ -6927,7 +6895,7 @@ export type $OpenApiTs = {
             };
         };
     };
-    '/ui/deadlines': {
+    '/ui/dags/{dag_id}/dagRuns/{dag_run_id}/deadlines': {
         get: {
             req: GetDeadlinesData;
             res: {
@@ -6936,20 +6904,9 @@ export type $OpenApiTs = {
                  */
                 200: DeadlineWithDagRunCollectionResponse;
                 /**
-                 * Validation Error
+                 * Bad Request
                  */
-                422: HTTPValidationError;
-            };
-        };
-    };
-    '/ui/dags/{dag_id}/dagRuns/{dag_run_id}/deadlines': {
-        get: {
-            req: GetDagRunDeadlinesData;
-            res: {
-                /**
-                 * Successful Response
-                 */
-                200: DeadlineCollectionResponse;
+                400: HTTPExceptionResponse;
                 /**
                  * Not Found
                  */
